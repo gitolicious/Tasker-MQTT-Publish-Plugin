@@ -9,7 +9,7 @@ import android.widget.CheckBox;
 import android.widget.RadioGroup;
 
 public class EditActivity extends Activity {
-	
+
 	String mServer, mPort, mClientId, mUsername, mPassword, mTopic, mPayload;
     Boolean mSSL, mSSLIgnoreCert, mRetain;
 	EditText mServerText, mPortText, mClientIdText, mUsernameText, mPasswordText, mTopicText, mPayloadText;
@@ -21,24 +21,24 @@ public class EditActivity extends Activity {
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
-		
+
 		super.onCreate(savedInstanceState);
-		
+
 		final Bundle localeBundle = getIntent().getBundleExtra(com.twofortyfouram.locale.Intent.EXTRA_BUNDLE);
-		
+
 		setContentView(R.layout.main);
-		mServerText = (EditText) findViewById(R.id.broker_ip);
-		mPortText = (EditText) findViewById(R.id.broker_port);
-		mClientIdText = (EditText) findViewById(R.id.client_id);
-		mSSLCheck = (CheckBox) findViewById(R.id.ssl);
-		mSSLIgnoreCertCheck = (CheckBox) findViewById(R.id.ssl_ignore_cert);
-		mUsernameText = (EditText) findViewById(R.id.username);
-		mPasswordText = (EditText) findViewById(R.id.password);
-		mTopicText = (EditText) findViewById(R.id.message_topic);
-		mPayloadText = (EditText) findViewById(R.id.message_payload);
-		mRetainCheck = (CheckBox) findViewById(R.id.retain);
-		mRadioGroup = (RadioGroup) findViewById(R.id.radioGroupQoS);
-		
+		mServerText = findViewById(R.id.broker_ip);
+		mPortText = findViewById(R.id.broker_port);
+		mClientIdText = findViewById(R.id.client_id);
+		mSSLCheck = findViewById(R.id.ssl);
+		mSSLIgnoreCertCheck = findViewById(R.id.ssl_ignore_cert);
+		mUsernameText = findViewById(R.id.username);
+		mPasswordText = findViewById(R.id.password);
+		mTopicText = findViewById(R.id.message_topic);
+		mPayloadText = findViewById(R.id.message_payload);
+		mRetainCheck = findViewById(R.id.retain);
+		mRadioGroup = findViewById(R.id.radioGroupQoS);
+
 		if (savedInstanceState == null) {
 			if (localeBundle != null) {
 				mExtra = localeBundle.getStringArray("Extra");
@@ -75,7 +75,7 @@ public class EditActivity extends Activity {
 
 		if (mServer.length() > 0 && mPort.length() > 0 && mTopic.length() > 0) {
 			Intent resultIntent = new Intent();
-			
+
 			Bundle bundle = new Bundle();
 			bundle.putString(BundleExtraKeys.SERVER, mServer);
 			bundle.putString(BundleExtraKeys.PORT, mPort);
@@ -101,18 +101,17 @@ public class EditActivity extends Activity {
 			}
 			bundle.putInt(BundleExtraKeys.QOS, mQoSID);
 			resultIntent.putExtra(com.twofortyfouram.locale.Intent.EXTRA_BUNDLE, bundle);
-			
+
 			// Tasker's variable replacement
 			if (TaskerPlugin.Setting.hostSupportsOnFireVariableReplacement(this))
                 TaskerPlugin.Setting.setVariableReplaceKeys( bundle, new String [] { BundleExtraKeys.TOPIC, BundleExtraKeys.PAYLOAD, BundleExtraKeys.CLIENT_ID, BundleExtraKeys.PASSWORD, BundleExtraKeys.USERNAME, BundleExtraKeys.PORT, BundleExtraKeys.SERVER });
-			
+
 			// We define the blurb that will appear in the configuration
 			String blurb = mServer + ":" + mPort + " => " + mTopic + " QoS:" + mQoS;
 			resultIntent.putExtra(com.twofortyfouram.locale.Intent.EXTRA_STRING_BLURB, blurb);
-			
+
 			setResult(RESULT_OK,resultIntent);
 			super.finish();
 		}
 	}
 }
-

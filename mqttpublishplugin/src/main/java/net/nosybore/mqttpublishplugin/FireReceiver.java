@@ -5,7 +5,11 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.os.AsyncTask;
+import android.support.annotation.MainThread;
 import android.util.Log;
+import android.widget.Toast;
+
+import com.google.android.gms.security.ProviderInstaller;
 
 import org.eclipse.paho.client.mqttv3.MqttClient;
 import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
@@ -13,8 +17,6 @@ import org.eclipse.paho.client.mqttv3.MqttException;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
 import org.eclipse.paho.client.mqttv3.MqttTopic;
 import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence;
-
-import com.google.android.gms.security.ProviderInstaller;
 
 import java.security.KeyStore;
 
@@ -45,40 +47,40 @@ public final class FireReceiver extends BroadcastReceiver {
         mRetain = intent.getBooleanExtra("Retain", false);
         mQoS = intent.getIntExtra(BundleExtraKeys.QOS, 0);
 
-            // select the protocol
-            if (mSSL) {
-                mProtocol = "ssl://";
-            } else {
-                mProtocol = "tcp://";
-            }
-            final String BROKER_URL = mProtocol + mServer + ":" + mPort;
+        // select the protocol
+        if (mSSL) {
+            mProtocol = "ssl://";
+        } else {
+            mProtocol = "tcp://";
+        }
+        final String BROKER_URL = mProtocol + mServer + ":" + mPort;
 
-            // set a proper client id if we have none
-            if (mClientId == null || mClientId.trim().equals("")) {
-                mClientId = MqttClient.generateClientId();
-            }
+        // set a proper client id if we have none
+        if (mClientId == null || mClientId.trim().equals("")) {
+            mClientId = MqttClient.generateClientId();
+        }
 
-            try {
-                client = new MqttClient(BROKER_URL, mClientId, new MemoryPersistence());
-            } catch (MqttException e) {
-                e.printStackTrace();
-                System.exit(1);
-            }
+        try {
+            client = new MqttClient(BROKER_URL, mClientId, new MemoryPersistence());
+        } catch (MqttException e) {
+            e.printStackTrace();
+            System.exit(1);
+        }
 
-            new SendMqttMessage(context).execute();
+        new SendMqttMessage(context).execute();
     }
-	
-    class SendMqttMessage extends AsyncTask<Void, Void, Void> {
+
+    class SendMqttMessage extends AsyncTask<Void, Void, String> {
 
         // we need the app context in here
         private Context appContext;
 
-        public SendMqttMessage (Context context) {
+        SendMqttMessage(Context context) {
             appContext = context;
         }
 
-	    @Override
-		protected Void doInBackground(Void... v) {
+        @Override
+        protected String doInBackground(Void... v) {
 
             try {
 
@@ -86,7 +88,7 @@ public final class FireReceiver extends BroadcastReceiver {
                 final MqttMessage message = new MqttMessage(String.valueOf(mPayload).getBytes());
                 final MqttConnectOptions options = new MqttConnectOptions();
                 message.setRetained(mRetain);
-                switch (mQoS){
+                switch (mQoS) {
                     case R.id.rbQoS0:
                     default:
                         message.setQos(0);
@@ -98,7 +100,7 @@ public final class FireReceiver extends BroadcastReceiver {
                         message.setQos(2);
                         break;
                 }
-                if(mUsername != null && !mUsername.trim().equals("")) {
+                if (mUsername != null && !mUsername.trim().equals("")) {
                     options.setUserName(mUsername);
                     options.setPassword(mPassword.toCharArray());
                 }
@@ -161,16 +163,31 @@ public final class FireReceiver extends BroadcastReceiver {
                 return null;
 
             } catch (MqttException e) {
-                e.printStackTrace();
-                System.exit(1);
+                Log.e("Receiver", e.getMessage(), e);
+                String msg = e.getMessage();
+                if (e.getCause() != null) msg += " - " + e.getCause().getMessage();
+                return msg;
             } catch (Exception e) {
-                e.printStackTrace();
-                System.exit(1);
+                Log.e("Receiver", e.getMessage(), e);
+                return e.getMessage();
             }
-            return null;
-	    }
+        }
 
-	    @Override
-		protected void onPostExecute(Void v) { }
-	}
+        @Override
+        @MainThread
+        protected void onPostExecute(String response) {
+            if (response != null && !response.isEmpty()) {
+                Toast.makeText(appContext, response, Toast.LENGTH_LONG).show();
+            }
+            super.onPostExecute(response);
+        }
+
+        @Override
+        @MainThread
+        protected void onCancelled(String response) {
+            if (response != null && !response.isEmpty()) {
+                Toast.makeText(appContext, response, Toast.LENGTH_LONG).show();
+            }
+        }
+    }
 }
